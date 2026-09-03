@@ -20,79 +20,120 @@ def client():
 
 
 def test_root_redirects_to_static_index(client):
+    # Arrange
+    expected_location = "/static/index.html"
+
+    # Act
     response = client.get("/", follow_redirects=False)
 
+    # Assert
     assert response.status_code == 307
-    assert response.headers["location"] == "/static/index.html"
+    assert response.headers["location"] == expected_location
 
 
 def test_get_activities_returns_activity_data(client):
+    # Arrange
+    expected_activity = "Chess Club"
+
+    # Act
     response = client.get("/activities")
 
+    # Assert
     assert response.status_code == 200
     activities = response.json()
-    assert "Chess Club" in activities
-    assert "michael@mergington.edu" in activities["Chess Club"]["participants"]
+    assert expected_activity in activities
+    assert "michael@mergington.edu" in activities[expected_activity]["participants"]
 
 
 def test_signup_adds_participant_to_activity(client):
+    # Arrange
+    activity = "Chess Club"
+    email = "student@mergington.edu"
+
+    # Act
     response = client.post(
         "/activities/Chess%20Club/signup",
-        params={"email": "student@mergington.edu"},
+        params={"email": email},
     )
 
+    # Assert
     assert response.status_code == 200
     assert response.json() == {
-        "message": "Signed up student@mergington.edu for Chess Club"
+        "message": f"Signed up {email} for {activity}"
     }
-    assert "student@mergington.edu" in app_module.activities["Chess Club"]["participants"]
+    assert email in app_module.activities[activity]["participants"]
 
 
 def test_signup_for_unknown_activity_returns_not_found(client):
+    # Arrange
+    email = "student@mergington.edu"
+    endpoint = "/activities/Unknown%20Club/signup"
+
+    # Act
     response = client.post(
-        "/activities/Unknown%20Club/signup",
-        params={"email": "student@mergington.edu"},
+        endpoint,
+        params={"email": email},
     )
 
+    # Assert
     assert response.status_code == 404
     assert response.json() == {"detail": "Activity not found"}
 
 
 def test_duplicate_signup_returns_bad_request(client):
+    # Arrange
+    email = "michael@mergington.edu"
+
+    # Act
     response = client.post(
         "/activities/Chess%20Club/signup",
-        params={"email": "michael@mergington.edu"},
+        params={"email": email},
     )
 
+    # Assert
     assert response.status_code == 400
     assert response.json() == {"detail": "Already signed up for this activity"}
 
 
 def test_remove_participant_removes_existing_participant(client):
+    # Arrange
+    email = "michael@mergington.edu"
+
+    # Act
     response = client.delete(
         "/activities/Chess%20Club/participants/michael%40mergington.edu"
     )
 
+    # Assert
     assert response.status_code == 200
     assert response.json() == {
-        "message": "Removed michael@mergington.edu from Chess Club"
+        "message": f"Removed {email} from Chess Club"
     }
-    assert "michael@mergington.edu" not in app_module.activities["Chess Club"]["participants"]
+    assert email not in app_module.activities["Chess Club"]["participants"]
 
 
 def test_remove_participant_from_unknown_activity_returns_not_found(client):
+    # Arrange
+    activity = "Unknown Club"
+    email = "student@mergington.edu"
+
+    # Act
     response = client.delete(
         "/activities/Unknown%20Club/participants/student%40mergington.edu"
     )
 
+    # Assert
     assert response.status_code == 404
     assert response.json() == {"detail": "Activity not found"}
 
 
 def test_remove_missing_participant_returns_not_found(client):
-    response = client.delete(
-        "/activities/Chess%20Club/participants/missing%40mergington.edu"
-    )
+    # Arrange
+    endpoint = "/activities/Chess%20Club/participants/missing%40mergington.edu"
 
+    # Act
+    response = client.delete(endpoint)
+
+    # Assert
     assert response.status_code == 404
     assert response.json() == {"detail": "Participant not found"}

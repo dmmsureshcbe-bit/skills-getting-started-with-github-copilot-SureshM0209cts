@@ -40,6 +40,18 @@ def test_get_activities_returns_activity_data(client):
     assert "michael@mergington.edu" in activities[expected_activity]["participants"]
 
 
+def test_get_cities_for_unknown_country_returns_not_found(client):
+    # Arrange
+    endpoint = "/countries/Spain/cities"
+
+    # Act
+    response = client.get(endpoint)
+
+    # Assert
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Country or region 'Spain' not found"}
+
+
 def test_signup_adds_participant_to_activity(client):
     # Arrange
     activity = "Chess Club"

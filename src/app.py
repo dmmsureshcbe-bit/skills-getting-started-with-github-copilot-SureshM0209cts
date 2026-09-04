@@ -77,15 +77,34 @@ activities = {
     }
 }
 
+cities_by_country = {
+    "United States": ["New York", "Los Angeles", "Chicago", "Houston"],
+    "Canada": ["Toronto", "Vancouver", "Montreal", "Calgary"],
+    "United Kingdom": ["London", "Manchester", "Birmingham", "Edinburgh"],
+}
+
 
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/index.html")
 
 
+
 @app.get("/activities")
 def get_activities():
     return activities
+
+
+@app.get("/countries/{country}/cities")
+def get_cities(country: str):
+    """Return the cities for a country or region."""
+    cities = cities_by_country.get(country)
+    if cities is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Country or region '{country}' not found",
+        )
+    return {"country": country, "cities": cities}
 
 
 @app.post("/activities/{activity_name}/signup")
